@@ -1,0 +1,78 @@
+DAX Commands that can be useful
+
+#// Gets the current time as the last refreshed
+= #table(type table[Date Last Refreshed=datetime],{{DateTime.LocalNow()}})
+
+// Displays the reporting period range in "MMM/YY - MMM/YY" format.
+M_Date Selection = FORMAT(MIN(DIM_DATE[Reporting Period]),"MMM/YY") & " - " & FORMAT(MAX(DIM_DATE[Reporting Period]),"MMM/YY")
+
+// Shows the last date the data model was refreshed.
+M_Date/Time Last Refreshed = "Last Refreshed: " & FORMAT(VALUES(LAST_REFRESHED[Date Last Refreshed]),"mm.dd.yy")
+
+// Calculates the total units sold.
+M_Units Sold = SUM(FACT_SALES[Units Sold])
+
+// Calculates units sold for the current year.
+M_Units Sold CY = CALCULATE(SUM(FACT_SALES[Units Sold]), DIM_DATE[Year Rank] = "1")
+
+// Calculates units sold for the previous year.
+M_Units Sold PY = CALCULATE([M_Units Sold], DIM_DATE[Year Rank] = "2")
+
+// Calculates total gross sales.
+M_Gross Sales = SUM(FACT_SALES[Gross Sales])
+
+// Calculates total discounts applied.
+M_Discounts = SUM(FACT_SALES[Discounts])
+
+// Calculates net sales after discounts.
+M_Net Sales = SUM(FACT_SALES[Sales])
+
+// Calculates total cost of goods sold.
+M_Cost Of Goods = SUM(FACT_SALES[COGs])
+
+// Calculates profit as net sales minus cost of goods sold.
+M_Profit = [M_Net Sales] - [M_Cost Of Goods]
+
+// Calculates profit for the current year.
+M_Profit CY = CALCULATE([M_Profit], DIM_DATE[Year Rank] = "1")
+
+// Calculates profit for the previous year.
+M_Profit PY = CALCULATE([M_Profit], DIM_DATE[Year Rank] = "2")
+
+// Calculates year-over-year profit percentage change.
+M_Profit YOY% = IFERROR(CALCULATE(([M_Profit CY] - [M_Profit PY]) / ABS([M_Profit PY]), ALL(DIM_DATE[Year])), 1)
+
+// Formats the YOY profit change as a percentage string.
+M_Profit YOY% Formatted = "YOY: " & FORMAT([M_Profit YOY%], "00%")
+
+// Calculates profit margin as profit divided by net sales.
+M_Profit Margin = IFERROR([M_Profit] / [M_Net Sales], 0)
+
+// Formats profit margin with a "+" sign if positive.
+M_Profit Margin Formatted = IF([M_Profit Margin] > 0, "+" & FORMAT([M_Profit Margin], "0%"), FORMAT([M_Profit Margin], "0%"))
+
+// Calculates the remaining percentage after subtracting profit margin from 100%.
+M_100% Minus Profit Margin = 1 - [M_Profit Margin]
+
+// Returns a fully transparent color value for visual formatting.
+M_Transparent = "RGBA(255,255,255,0)"
+
+// Counts the number of distinct countries in the sales data.
+M_# of Distinct Countries = DISTINCTCOUNT(FACT_SALES[Country])
+
+// Counts the number of distinct customer segments.
+M_# of Distinct Segments = DISTINCTCOUNT(FACT_SALES[Segment])
+
+// Displays a personalized greeting using the selected manager's first name.
+M_User Greeting = "Welcome " & SELECTEDVALUE(DIM_MANAGERS[First Name]) & "!"
+
+// Returns a background color based on whether a manager is selected.
+M_Welcome_All = VAR Selected_User = SELECTEDVALUE(DIM_MANAGERS[Manager ID]) RETURN IF(ISBLANK(Selected_User), "#fff", "RGBA(255,255,255,0)")
+
+// Assigns a color code based on the selected discount band.
+M_Discount Band Colors = 
+VAR High = IF(SELECTEDVALUE('FACT_SALES'[Discount Band]) = "High", TRUE, FALSE)
+VAR Medium = IF(SELECTEDVALUE('FACT_SALES'[Discount Band]) = "Medium", TRUE, FALSE)
+VAR Low = IF(SELECTEDVALUE('FACT_SALES'[Discount Band]) = "Low", TRUE, FALSE)
+VAR None = IF(SELECTEDVALUE('FACT_SALES'[Discount Band]) = "None", TRUE, FALSE)
+RETURN SWITCH(TRUE(), High, "#e92f42", Medium, "#ffbe0b", Low, "#049570", None, "#808080", "#07345F")
